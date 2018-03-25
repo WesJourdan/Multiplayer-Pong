@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
 import Paddle from './components/paddle'
 import Ball from './components/ball'
 import Scoreboard from './components/scoreboard'
@@ -38,17 +39,17 @@ class App extends Component {
 
   render() {
     const style = {
-      width: '30em',
-      height: '20em',
+      width: '100%',
+      height: '100%',
       backgroundColor: 'black'
     }
 
     return (
-      <div style={style}>
+      <div onMouseDown={() => console.log(window.innerWidth)} style={style}>
         < Scoreboard position={'left'} score={gameState.score.left} />
         < Scoreboard position={'right'} score={gameState.score.right} />
-        < Paddle paddle={gameState.paddle.left} />
-        < Paddle paddle={gameState.paddle.right} />
+        < Paddle position={'left'} paddle={gameState.paddle.left} />
+        < Paddle position={'right'} paddle={gameState.paddle.right} />
         < Ball ball={gameState.ball} />      
       </div>
     );
