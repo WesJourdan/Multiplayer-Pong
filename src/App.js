@@ -35,7 +35,22 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    // this.handleKeyPress = this.handleKeyPress.bind(this)
   }
+
+  // handleKeyPress (event) {
+  //   console.log('key pressed')
+  //   console.log(event)
+
+  // }
+
+  // componentWillMount () {
+  //   document.addEventListener("keydown", this.handleKeyPress.bind(this));
+  // }
+
+  // componentWillUnmount() {
+  //   document.removeEventListener("keydown", this.handleKeyPress.bind(this));
+  // } 
 
   render() {
     const style = {
@@ -45,23 +60,25 @@ class App extends Component {
     }
 
     return (
-      <div onMouseDown={(event) => console.log(ReactDOM.findDOMNode(this).getBoundingClientRect())} style={style}>
+      <div style={style}>
         < Scoreboard position={'left'} score={gameState.score.left} />
         < Scoreboard position={'right'} score={gameState.score.right} />
         < Paddle position={'left'} paddle={gameState.paddle.left} />
-        < Paddle position={'right'} paddle={gameState.paddle.right} />
+        {/* < Paddle position={'right'} paddle={gameState.paddle.right} /> */}
         < Ball ball={gameState.ball} />      
       </div>
-    );
+    ); 
   }
 
   componentDidMount () {
-    
+
+
+    //Game loop
     Loop((tick) => {
       gameState.ball.x += gameState.ball.vx * tick
       gameState.ball.y += gameState.ball.vy * tick
       this.forceUpdate()
-
+      
       // reverse velocity on collision with sides.
       if (gameState.ball.x > 77 && gameState.ball.vx > 0) {
         gameState.ball.vx *= -1
@@ -81,7 +98,7 @@ class App extends Component {
       }
 
       //collision for paddles
-      if (gameState.ball.x > 77 - 3.5
+      if (gameState.ball.x > 76.5 - 3.5
         && gameState.ball.vx > 0
         && gameState.ball.y < gameState.paddle.right.y + 12
         && gameState.ball.y >= gameState.paddle.right.y - 1
@@ -95,8 +112,8 @@ class App extends Component {
       ) {
         gameState.ball.vx *= -1
       }
-
     });
+
   }
 }
 
