@@ -9,8 +9,8 @@ let gameState = {
   ball: {
     x: Math.floor(Math.random() * 10) + 5,
     y: Math.floor(Math.random() * 10) + 5,
-    vx: 10 * (Math.random() < 0.5 ? 1 : -1),
-    vy: 10 * (Math.random() < 0.5 ? 1 : -1)
+    vx: 20 * (Math.random() < 0.5 ? 1 : -1),
+    vy: 20 * (Math.random() < 0.5 ? 1 : -1)
   },
   score: {
     left: 0,
@@ -18,12 +18,12 @@ let gameState = {
   },
   paddle: {
     left: {
-      x: 0.25,
-      y: 5
+      x: 0.5,
+      y: 46
     },
     right: {
-      x: 29 - 0.25,
-      y: 5
+      x: 0.5,
+      y: 0
     }
   }
   
@@ -45,7 +45,7 @@ class App extends Component {
     }
 
     return (
-      <div onMouseDown={() => console.log(window.innerWidth)} style={style}>
+      <div onMouseDown={(event) => console.log(ReactDOM.findDOMNode(this).getBoundingClientRect())} style={style}>
         < Scoreboard position={'left'} score={gameState.score.left} />
         < Scoreboard position={'right'} score={gameState.score.right} />
         < Paddle position={'left'} paddle={gameState.paddle.left} />
@@ -63,34 +63,36 @@ class App extends Component {
       this.forceUpdate()
 
       // reverse velocity on collision with sides.
-      if (gameState.ball.x > 28.9 && gameState.ball.vx > 0) {
+      if (gameState.ball.x > 77 && gameState.ball.vx > 0) {
         gameState.ball.vx *= -1
         gameState.score.left++
         console.log(gameState.ball.y)
       }
-      if (gameState.ball.x < 0.1 && gameState.ball.vx < 0) {
+      if (gameState.ball.x <= 0 && gameState.ball.vx < 0) {
         gameState.ball.vx *= -1
         gameState.score.right++
         console.log(gameState.score)
       }
-      if (gameState.ball.y > 19 && gameState.ball.vy > 0) {
+      if (gameState.ball.y > 57 && gameState.ball.vy > 0) {
         gameState.ball.vy *= -1
       }
-      if (gameState.ball.y < 0.1 && gameState.ball.vy < 0) {
+      if (gameState.ball.y <= 0 && gameState.ball.vy < 0) {
         gameState.ball.vy *= -1
       }
 
       //collision for paddles
-      if (gameState.ball.x > 28.9 - 1
+      if (gameState.ball.x > 77 - 3.5
         && gameState.ball.vx > 0
-        && gameState.ball.y < gameState.paddle.right.y + 4
-        && gameState.ball.y >= gameState.paddle.right.y - 1) {
+        && gameState.ball.y < gameState.paddle.right.y + 12
+        && gameState.ball.y >= gameState.paddle.right.y - 1
+      ) {
         gameState.ball.vx *= -1
       }
-      if (gameState.ball.x < 0.1 + 1
+      if (gameState.ball.x <= 0 + 3.5
         && gameState.ball.vx < 0
-        && gameState.ball.y < gameState.paddle.left.y + 4
-        && gameState.ball.y >= gameState.paddle.left.y - 1) {
+        && gameState.ball.y < gameState.paddle.left.y + 12
+        && gameState.ball.y >= gameState.paddle.left.y -  1
+      ) {
         gameState.ball.vx *= -1
       }
 
