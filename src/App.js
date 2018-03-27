@@ -81,6 +81,8 @@ class App extends Component {
     }
 
     let updatedState
+
+    //Should I move the game loop to just be a method of this class?
     // Game loop
     Loop((tick) => {
       
