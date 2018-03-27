@@ -11,8 +11,8 @@ const socket = io('http://localhost:8080');
 let gameState = {
   gameHost: false,
   ball: {
-    x: Math.floor(Math.random() * 10) + 5,
-    y: Math.floor(Math.random() * 10) + 5,
+    x: -10,
+    y: -10,
     vx: 20 * (Math.random() < 0.5 ? 1 : -1),
     vy: 20 * (Math.random() < 0.5 ? 1 : -1)
   },
@@ -38,11 +38,16 @@ let gameState = {
 }
 
 
+
+
 class App extends Component {
 
   constructor(props) {
     super(props);
 
+    this.state = {
+      side: null
+    }
   }
 
   render() {
@@ -52,121 +57,89 @@ class App extends Component {
       backgroundColor: 'black'
     }
 
-    return (
-      <div style={style}>
-        < Scoreboard position={'left'} score={gameState.score.left} />
-        < Scoreboard position={'right'} score={gameState.score.right} />
-        < Paddle position={'left'} paddle={gameState.paddle.left} />
-        < Opponent position={'right'} paddle={gameState.opponent} />
-        < Ball ball={gameState.ball} />      
-      </div>
-    ); 
+    if (this.state.side === 'left') {
+      return (
+        <div style={style}>
+          < Scoreboard position={'left'} score={gameState.score.left} />
+          < Scoreboard position={'right'} score={gameState.score.right} />
+          < Paddle position={'left'} paddle={gameState.paddle.left} forceRender={this.forceUpdate.bind(this)} />
+          < Opponent position={'right'} paddle={gameState.opponent} />
+          < Ball ball={gameState.ball} />      
+        </div>
+      ); 
+    } else if (this.state.side === 'right') {
+      return (
+        <div style={style}>
+          < Scoreboard position={'left'} score={gameState.score.left} />
+          < Scoreboard position={'right'} score={gameState.score.right} />
+          < Opponent position={'left'} paddle={gameState.opponent} />
+          < Paddle position={'right'} paddle={gameState.paddle.right} forceRender={this.forceUpdate.bind(this)} />
+          < Ball ball={gameState.ball} />
+        </div>
+      ); 
+    } else {
+      return (
+        <div style={style}>
+          <h1>Waiting for an opponent...</h1>
+        </div>
+      )
+    }
   }
+
+  playerReady (event) {
+    console.log(socket)
+    if (event.keyCode === 32) {
+      socket.emit('ready')
+    }
+    
+  }
+
+  componentWillMount() {
+    document.addEventListener("keydown", this.playerReady.bind(this));
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener("keydown", this.playerReady.bind(this));;
+  } 
+
 
   componentDidMount () {
 
-    // Listen for state updates from the server.
-    socket.on('newState', (data) => {
-      console.log("new state")
-      if (gameState.gameHost) {
-        gameState.opponent.y = data.paddle.y
-      } else {
-        gameState.ball = data.ball
-        gameState.opponent.y = data.paddle.y
-      }
+    socket.on('connect', () => {
+      socket.emit('join')
+      console.log('joining...')
     })
-    socket.on('gameHost'), () => {
-      gameState.gameHost = true
-      console.log('You are the host')
-    }
 
-    let updatedState
-
-    //Should I move the game loop to just be a method of this class?
-    // Game loop
-    Loop((tick) => {
-      
-      if (gameState.gameHost) {
-        updatedState = {
-          ball: gameState.ball,
-          paddle: gameState.paddle.left
-        }
-      } else {
-        updatedState = {
-          paddle: gameState.paddle.left
-        }
+    // Listen for state updates from the server.
+    socket.on('update', (data) => {
+      console.log('update')
+      gameState.opponent.y = data.paddle.y
+      gameState.ball = data.ball
+      socket.emit('left', gameState.paddle.left.y)
+      this.forceUpdate()
+    })
+    
+    socket.on('left', (data) => {
+      if (!this.state.side) {
+        console.log('You are on the left')
+        this.setState(data, () => {
+          console.log(this.state.side)
+        })
       }
+      this.forceUpdate()
+    })
 
-      if (updatedState) {
-        socket.emit('update', updatedState )
+    socket.on('right', (data) => {
+      if (!this.state.side) {
+        console.log('You are on the right')
+        this.setState(data, () => {
+          console.log(this.state.side)
+        })
       }
-      
-      // ball movement
-      if (gameState.gameHost) {
-
-        gameState.ball.x += gameState.ball.vx * tick
-        gameState.ball.y += gameState.ball.vy * tick
-        this.forceUpdate()
-      
-        // reverse ball velocity on collision with sides.
-        if (gameState.ball.x > 77 && gameState.ball.vx > 0) {
-          gameState.ball.vx *= -1
-          gameState.score.left++
-          console.log(gameState.ball.y)
-        }
-        if (gameState.ball.x <= 0 && gameState.ball.vx < 0) {
-          gameState.ball.vx *= -1
-          gameState.score.right++
-          console.log(gameState.score)
-        }
-        if (gameState.ball.y > 57 && gameState.ball.vy > 0) {
-          gameState.ball.vy *= -1
-        }
-        if (gameState.ball.y <= 0 && gameState.ball.vy < 0) {
-          gameState.ball.vy *= -1
-        }
-
-        // reverse ball velocity on collision with paddles.
-        if (gameState.ball.x > 77  - 3.5
-          && gameState.ball.vx > 0
-          && gameState.ball.y < gameState.opponent.y + 14
-          && gameState.ball.y >= gameState.opponent.y - 1) 
-        {
-          gameState.ball.vx *= -1
-        }
-
-        if (gameState.ball.x <= 0 + 3.5
-          && gameState.ball.vx < 0
-          && gameState.ball.y < gameState.paddle.left.y + 14
-          && gameState.ball.y >= gameState.paddle.left.y -  1) 
-        {
-          gameState.ball.vx *= -1
-        }
-      }
+      this.forceUpdate()
+    })
 
 
-      // Opponent movement
-
-      // Basic cooridnate matching
-      // if (gameState.ball.y < 46 && gameState.ball.y > 0) {
-      //   gameState.paddle.right.y = gameState.ball.y;
-      // }
-
-      // Based on increment movement like a real player
-      // if (gameState.paddle.right.y != gameState.ball.y
-      //   && gameState.ball.vx > 0
-      //   && gameState.ball.y < 46
-      //   && gameState.ball.y > 0) 
-      // {
-      //   if (gameState.ball.y > gameState.paddle.right.y) {
-      //     gameState.paddle.right.y += 1
-      //   }
-
-      //   if (gameState.ball.y < gameState.paddle.right.y) {
-      //     gameState.paddle.right.y -= 1
-      //   }
-      // }
-    });
 
   }
 }

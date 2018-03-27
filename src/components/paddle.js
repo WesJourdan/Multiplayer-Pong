@@ -28,7 +28,7 @@ export default class Paddle extends Component {
 			
 		}
 
-		if (this.props.position == 'left') {
+		if (this.props.position === 'left') {
 			style.left = `${this.props.paddle.x}vw`;
 			style.borderRadius = `30px 5px 5px 30px`
 		} else {
@@ -49,12 +49,15 @@ export default class Paddle extends Component {
 			if (event.keyCode === 40) {
 				if (this.props.paddle.y < 46) {
 					this.props.paddle.y += 1
+					this.props.forceRender()
 				}
+				
 			}
 			// arrow up
 			if (event.keyCode === 38) {
 				if (this.props.paddle.y > 0) {
 					this.props.paddle.y -= 1
+					this.props.forceRender()
 				}
 			}
 	};
