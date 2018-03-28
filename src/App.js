@@ -4,17 +4,18 @@ import Paddle from './components/paddle'
 import Opponent from './components/opponent'
 import Ball from './components/ball'
 import Scoreboard from './components/scoreboard'
+import Pause from './components/pause'
 import io from 'socket.io-client';
 const Loop = require('./scripts/loop');
 const socket = io('http://localhost:8080');
 
 let gameState = {
-  gameHost: false,
+
   ball: {
-    x: -10,
-    y: -10,
-    vx: 20 * (Math.random() < 0.5 ? 1 : -1),
-    vy: 20 * (Math.random() < 0.5 ? 1 : -1)
+    x:  -10,
+    y:  -10,
+    vx: 0,
+    vy: 0
   },
   score: {
     left: 0,
@@ -27,7 +28,7 @@ let gameState = {
     },
     right: {
       x: 0.5,
-      y: 0
+      y: 20
     }
   },
   opponent: {
@@ -46,18 +47,21 @@ class App extends Component {
     super(props);
 
     this.state = {
-      side: null
+      side: null,
+      isPaused: false
     }
   }
 
   render() {
+
     const style = {
       width: '100%',
       height: '100%',
       backgroundColor: 'black'
     }
 
-    if (this.state.side === 'left') {
+
+    if (this.state.side === 'left' && !this.state.isPaused) {
       return (
         <div style={style}>
           < Scoreboard position={'left'} score={gameState.score.left} />
@@ -67,7 +71,7 @@ class App extends Component {
           < Ball ball={gameState.ball} />      
         </div>
       ); 
-    } else if (this.state.side === 'right') {
+    } else if (this.state.side === 'right' && !this.state.isPaused) {
       return (
         <div style={style}>
           < Scoreboard position={'left'} score={gameState.score.left} />
@@ -77,6 +81,15 @@ class App extends Component {
           < Ball ball={gameState.ball} />
         </div>
       ); 
+    } else if (this.state.isPaused) {
+      return (
+        <div style={style}>
+          < Scoreboard position={'left'} score={gameState.score.left} />
+          < Scoreboard position={'right'} score={gameState.score.right} />
+          < Pause />
+        </div>
+      ); 
+
     } else {
       return (
         <div style={style}>
@@ -115,11 +128,18 @@ class App extends Component {
       console.log('update')
       gameState.opponent.y = data.paddle.y
       gameState.ball = data.ball
-      socket.emit('left', gameState.paddle.left.y)
+      gameState.score = data.score
+
+      if (this.state.side === 'left') {
+        socket.emit('left', gameState.paddle.left.y)
+      } else {
+        socket.emit('right', gameState.paddle.right.y)
+      }
+      
       this.forceUpdate()
     })
     
-    socket.on('left', (data) => {
+    socket.on('leftPlayer', (data) => {
       if (!this.state.side) {
         console.log('You are on the left')
         this.setState(data, () => {
@@ -129,7 +149,7 @@ class App extends Component {
       this.forceUpdate()
     })
 
-    socket.on('right', (data) => {
+    socket.on('rightPlayer', (data) => {
       if (!this.state.side) {
         console.log('You are on the right')
         this.setState(data, () => {
@@ -139,9 +159,22 @@ class App extends Component {
       this.forceUpdate()
     })
 
+    socket.on('pause', () => {
+      this.setState({
+        isPaused: true
+      })
+    })
+
+    socket.on('play', () => {
+      this.setState({
+        isPaused: false
+      })
+    })
 
 
   }
+  
+
 }
 
 export default App;

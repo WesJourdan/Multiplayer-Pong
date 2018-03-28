@@ -36,16 +36,11 @@ let gameState = {
 	}
 }
 
-let updateLeft = {}
-updateLeft.ball = gameState.ball
-updateLeft.paddle = gameState.paddle.right
-
-let updateRight = {}
-updateRight.ball = gameState.ball
-updateRight.paddle = gameState.paddle.left
-
+let updateLeftPlayer = {}
+let updateRightPlayer = {}
 let playerIndex = []
 let readySetGo = 0
+let isPaused = true
 
 
 
@@ -53,22 +48,17 @@ io.on('connection', (socket) => {
 	console.log('connected ' + socket.id)
 	
 	socket.on('join', () => {
-		console.log(socket)
 		if (playerIndex.length < 2) {
-
-			console.log('pushing player', socket.id)
 			playerIndex.push(socket)
+			// console.log('pushing player', socket.id)
 		}
 
 		if (playerIndex.length === 1) {
-			
-			socket.emit('left', { side: 'left' })
-			console.log('emitting left', playerIndex[0])
+			socket.emit('leftPlayer', { side: 'left' })
+			// console.log('emitting left', playerIndex[0])
 		} else if (playerIndex.length === 2) {
-			
-			socket.emit('right', { side: 'right' })
-			// socket.to(playerIndex[1]).emit('right', { side: 'right' })
-			console.log('emitting right', playerIndex[1])
+			socket.emit('rightPlayer', { side: 'right' })
+			// console.log('emitting right', playerIndex[1])
 		}
 
 	});
@@ -76,35 +66,44 @@ io.on('connection', (socket) => {
 // Listen for new state from both clients
 	socket.on('left', (data) => {
 		gameState.paddle.left.y = data
-		console.log(gameState.paddle.left.y)
-		socket.broadcast.emit('update', {
-			paddle: gameState.paddle.left,
-			ball: gameState.ball
-		})
 	})
 
 	socket.on('right', (data) => {
 		gameState.paddle.right.y = data
-		socket.broadcast.emit('update', {
-			paddle: gameState.paddle.right,
-			ball: gameState.ball
-		})
 	})
 
 
+	// increment ready counter. When it gets to 2 the game starts. When it hits 3 the game pauses
+	// and the counter is reset to 0. When it hits 2 the game starts again.
 	socket.on('ready', () => {
 		console.log('ready', readySetGo)
+		if (readySetGo > 2) {
+			readySetGo = 0
+		}
 		++readySetGo
-	})
 
+		if (readySetGo !== 2) {
+			playerIndex[0].emit('pause')
+			playerIndex[1].emit('pause')
+			console.log('paused')
+			isPaused = true
+		} else {
+			playerIndex[0].emit('play')
+			playerIndex[1].emit('play')
+			console.log('play')
+			//TODO put a set timeout here for when the game is unpaused to display a countdown to the players. 
+			isPaused = false
+		}
+	})
 
 });
 
-	let shouldUpdate = false
+	
 
 	const loop = gameLoop.setGameLoop((delta) => {
 
-		if (readySetGo !== 2){
+		if (isPaused){
+			//pause the game
 			return
 		}
 		
@@ -116,7 +115,6 @@ io.on('connection', (socket) => {
 		if (gameState.ball.x > 77 && gameState.ball.vx > 0) {
 			gameState.ball.vx *= -1
 			gameState.score.left++
-			console.log(gameState.ball.vx * delta)
 		}
 		if (gameState.ball.x <= 0 && gameState.ball.vx < 0) {
 			gameState.ball.vx *= -1
@@ -144,13 +142,23 @@ io.on('connection', (socket) => {
 			&& gameState.ball.y >= gameState.paddle.left.y - 1) {
 			gameState.ball.vx *= -1
 		}
-		// socket1.to(playerIndex[1]).emit('update', updateRight);
-		if (shouldUpdate) {
-			playerIndex[0].emit('update', updateLeft)
-			playerIndex[1].emit('update', updateRight)
-		}
-		shouldUpdate = !shouldUpdate
-	}, 1000/24)
+
+
+		//set updates to their objects.
+		updateLeftPlayer.ball = gameState.ball
+		updateLeftPlayer.paddle = gameState.paddle.right
+		updateLeftPlayer.score = gameState.score
+
+		updateRightPlayer.ball = gameState.ball
+		updateRightPlayer.paddle = gameState.paddle.left
+		updateRightPlayer.score = gameState.score
+		
+		//update both players.
+		playerIndex[0].emit('update', updateLeftPlayer)
+		playerIndex[1].emit('update', updateRightPlayer)
+	
+		// 1000/fps
+	}, 1000/60)
 
 
 
