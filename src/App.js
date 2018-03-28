@@ -1,64 +1,67 @@
 import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
 import Paddle from './components/paddle'
 import Opponent from './components/opponent'
 import Ball from './components/ball'
 import Scoreboard from './components/scoreboard'
 import Pause from './components/pause'
+import Lobby from './components/lobby'
 import io from 'socket.io-client';
-const Loop = require('./scripts/loop');
-// const socket = io('http://wes1.localhost.run')
 const socket = io('http://localhost:8080');
-
-let gameState = {
-
-  ball: {
-    x:  -10,
-    y:  -10,
-    vx: 0,
-    vy: 0
-  },
-  score: {
-    left: 0,
-    right: 0
-  },
-  paddle: {
-    left: {
-      x: 0.5,
-      y: 20
-    },
-    right: {
-      x: 0.5,
-      y: 20
-    }
-  },
-  opponent: {
-    x: 0.5,
-    y: 20
-  }
-  
-}
-
-
+// const socket = io('http://wes1.localhost.run')
 
 
 class App extends Component {
 
-  constructor(props) {
-    super(props);
+  constructor() {
+    super();
 
     this.state = {
+      ball: {
+        x: -10,
+        y: -10,
+        vx: 0,
+        vy: 0
+      },
+      score: {
+        left: 0,
+        right: 0
+      },
+      paddle: {
+        left: {
+          name: '',
+          x: 0.5,
+          y: 15
+        },
+        right: {
+          name: '',
+          x: 0.5,
+          y: 15
+        }
+      },
+      opponent: {
+        name: '',
+        x: 0.5,
+        y: 15
+      },
       side: null,
-      isPaused: false
+      isPaused: true,
+      name: null
     }
+
+    this.setState = this.setState.bind(this)
   }
 
   render() {
 
     const style = {
+      color: 'lightgreen',
+      position: 'absolute',
       width: '100%',
       height: '100%',
-      backgroundColor: 'black'
+      margin: 'auto',
+      textAlign: 'center',
+      fontSize: '2vw',
+      backgroundColor: 'black',
     }
     const pauseStyle = {
       color: 'lightgreen',
@@ -67,7 +70,7 @@ class App extends Component {
       height: '100%',
       margin: 'auto',
       textAlign: 'center',
-      fontSize: '4vw',
+      fontSize: '2vw',
       backgroundColor: 'black',
       opacity: '0.5'
     }
@@ -75,31 +78,31 @@ class App extends Component {
     if (this.state.side === 'left' && !this.state.isPaused) {
       return (
         <div style={style}>
-          < Scoreboard position={'left'} score={gameState.score.left} />
-          < Scoreboard position={'right'} score={gameState.score.right} />
-          < Paddle position={'left'} paddle={gameState.paddle.left} forceRender={this.forceUpdate.bind(this)} />
-          < Opponent position={'right'} paddle={gameState.opponent} />
-          < Ball ball={gameState.ball} />      
+          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.name}/>
+          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.opponent.name} />
+          < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
+          < Opponent position={'right'} paddle={this.state.opponent} />
+          < Ball ball={this.state.ball} />      
         </div>
       ); 
     } else if (this.state.side === 'right' && !this.state.isPaused) {
       return (
         <div style={style}>
-          < Scoreboard position={'left'} score={gameState.score.left} />
-          < Scoreboard position={'right'} score={gameState.score.right} />
-          < Opponent position={'left'} paddle={gameState.opponent} />
-          < Paddle position={'right'} paddle={gameState.paddle.right} forceRender={this.forceUpdate.bind(this)} />
-          < Ball ball={gameState.ball} />
+          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.opponent.name}/>
+          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.name}/>
+          < Opponent position={'left'} paddle={this.state.opponent} />
+          < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
+          < Ball ball={this.state.ball} />
         </div>
       ); 
-    } else if (this.state.side === 'left' &&this.state.isPaused) {
+    } else if (this.state.side === 'left' && this.state.isPaused) {
       return (
         <div style={pauseStyle}>
-          < Scoreboard position={'left'} score={gameState.score.left} />
-          < Scoreboard position={'right'} score={gameState.score.right} />
-          < Paddle position={'left'} paddle={gameState.paddle.left} forceRender={this.forceUpdate.bind(this)} />
-          < Opponent position={'right'} paddle={gameState.opponent} />
-          < Ball ball={gameState.ball} />      
+          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.name} />
+          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.opponent.name}/>
+          < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
+          < Opponent position={'right'} paddle={this.state.opponent} />
+          < Ball ball={this.state.ball} />      
           < Pause />
         </div>
       ); 
@@ -107,30 +110,34 @@ class App extends Component {
     } else if (this.state.side === 'right' && this.state.isPaused) {
       return (
         <div style={pauseStyle}>
-          < Scoreboard position={'left'} score={gameState.score.left} />
-          < Scoreboard position={'right'} score={gameState.score.right} />
-          < Opponent position={'left'} paddle={gameState.opponent} />
-          < Paddle position={'right'} paddle={gameState.paddle.right} forceRender={this.forceUpdate.bind(this)} />
-          < Ball ball={gameState.ball} />
+          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.opponent.name} />
+          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.name} />
+          < Opponent position={'left'} paddle={this.state.opponent} />
+          < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
+          < Ball ball={this.state.ball} />
           < Pause />
         </div>
       );
 
-    } else {
+    } else if (this.state.side === null) {
       return (
         <div style={style}>
-          <h1>Waiting for an opponent...</h1>
+          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.paddle.left.name}/>
+          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.paddle.right.name} />
+          < Opponent position={'left'} paddle={this.state.paddle.left} />
+          < Opponent position={'right'} paddle={this.state.paddle.right} />
+          < Ball ball={this.state.ball} />
+          < Lobby name={this.state.name} setName={this.setState} socket={socket}/>
         </div>
       )
     }
   }
 
   playerReady (event) {
-    console.log(socket)
-    if (event.keyCode === 32) {
+
+    if (event.keyCode === 32 && this.state.side != null) {
       socket.emit('ready')
     }
-    
   }
 
   componentWillMount() {
@@ -143,46 +150,44 @@ class App extends Component {
 
 
   componentDidMount () {
+    // socket.on('connect', () => {
+    //   socket.emit('join')
+    //   console.log('joining...')
+    // })
 
-    socket.on('connect', () => {
-      socket.emit('join')
-      console.log('joining...')
-    })
-
-    // Listen for state updates from the server.
-    socket.on('update', (data) => {
-      console.log('update')
-      gameState.opponent.y = data.paddle.y
-      gameState.ball = data.ball
-      gameState.score = data.score
-
-      if (this.state.side === 'left') {
-        socket.emit('left', gameState.paddle.left.y)
-      } else {
-        socket.emit('right', gameState.paddle.right.y)
-      }
-      
-      this.forceUpdate()
-    })
-    
+    // Listen for the server to assign which side the client will control.
     socket.on('leftPlayer', (data) => {
       if (!this.state.side) {
         console.log('You are on the left')
-        this.setState(data, () => {
-          console.log(this.state.side)
-        })
+        this.setState(data)
       }
-      this.forceUpdate()
     })
 
     socket.on('rightPlayer', (data) => {
       if (!this.state.side) {
         console.log('You are on the right')
-        this.setState(data, () => {
-          console.log(this.state.side)
-        })
+        this.setState(data)
       }
-      this.forceUpdate()
+    })
+
+    // Listen for state updates from the server.
+    socket.on('update', (data) => {
+      if (this.state.side != null) {
+        this.setState({
+          opponent: data.paddle,
+          ball: data.ball,
+          score: data.score
+        })
+      } else if (this.state.side === null) {
+        this.setState(data)
+        console.log(data)
+      }
+      // on each update from the server, send client's current position.
+      if (this.state.side === 'left') {
+        socket.emit('left', this.state.paddle.left.y)
+      } else if (this.state.side === 'right') {
+        socket.emit('right', this.state.paddle.right.y)
+      } 
     })
 
     socket.on('pause', () => {
@@ -197,10 +202,38 @@ class App extends Component {
       })
     })
 
-
+    socket.on('reset', () => {
+      this.setState({
+        ball: {
+          x: -10,
+          y: -10,
+          vx: 0,
+          vy: 0
+        },
+        score: {
+          left: 0,
+          right: 0
+        },
+        paddle: {
+          left: {
+            name: '',
+            x: 0.5,
+            y: 15
+          },
+          right: {
+            name: '',
+            x: 0.5,
+            y: 15
+          }
+        },
+        opponent: {
+          x: 0.5,
+          y: 15
+        },
+        isPaused: true
+      })
+    })
   }
-  
-
 }
 
 export default App;

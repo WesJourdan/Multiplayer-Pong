@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 
-
 export default class Ball extends Component {
 
 	render() {
-		
+
 		const style = {
 			width: '3vw',
 			height: '3vw',
@@ -21,5 +20,4 @@ export default class Ball extends Component {
 			</div>
 		);
 	};
-
 };

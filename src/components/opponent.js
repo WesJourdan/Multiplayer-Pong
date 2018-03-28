@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
+
 export default class Opponent extends Component {
 	constructor(props) {
 		super(props)
