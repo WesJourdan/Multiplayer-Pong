@@ -24,16 +24,17 @@ export default class Paddle extends Component {
 			height: '14vw',
 			position: 'absolute',
 			backgroundColor: 'white',
-			top: `${this.props.paddle.y}vw`,
-			
+			top: `${this.props.paddle.y}vw`,			
 		}
 
 		if (this.props.position === 'left') {
 			style.left = `${this.props.paddle.x}vw`;
 			style.borderRadius = `30px 5px 5px 30px`
+			style.borderLeft = '1vw solid lightgreen'
 		} else {
 			style.right = `${this.props.paddle.x}vw`;
 			style.borderRadius = `5px 30px 30px 5px`
+			style.borderRight = '1vw solid lightgreen'
 		}
 
 		return (

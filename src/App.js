@@ -7,6 +7,7 @@ import Scoreboard from './components/scoreboard'
 import Pause from './components/pause'
 import io from 'socket.io-client';
 const Loop = require('./scripts/loop');
+// const socket = io('http://wes1.localhost.run')
 const socket = io('http://localhost:8080');
 
 let gameState = {
@@ -59,7 +60,17 @@ class App extends Component {
       height: '100%',
       backgroundColor: 'black'
     }
-
+    const pauseStyle = {
+      color: 'lightgreen',
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      margin: 'auto',
+      textAlign: 'center',
+      fontSize: '4vw',
+      backgroundColor: 'black',
+      opacity: '0.5'
+    }
 
     if (this.state.side === 'left' && !this.state.isPaused) {
       return (
@@ -81,14 +92,29 @@ class App extends Component {
           < Ball ball={gameState.ball} />
         </div>
       ); 
-    } else if (this.state.isPaused) {
+    } else if (this.state.side === 'left' &&this.state.isPaused) {
       return (
-        <div style={style}>
+        <div style={pauseStyle}>
           < Scoreboard position={'left'} score={gameState.score.left} />
           < Scoreboard position={'right'} score={gameState.score.right} />
+          < Paddle position={'left'} paddle={gameState.paddle.left} forceRender={this.forceUpdate.bind(this)} />
+          < Opponent position={'right'} paddle={gameState.opponent} />
+          < Ball ball={gameState.ball} />      
           < Pause />
         </div>
       ); 
+
+    } else if (this.state.side === 'right' && this.state.isPaused) {
+      return (
+        <div style={pauseStyle}>
+          < Scoreboard position={'left'} score={gameState.score.left} />
+          < Scoreboard position={'right'} score={gameState.score.right} />
+          < Opponent position={'left'} paddle={gameState.opponent} />
+          < Paddle position={'right'} paddle={gameState.paddle.right} forceRender={this.forceUpdate.bind(this)} />
+          < Ball ball={gameState.ball} />
+          < Pause />
+        </div>
+      );
 
     } else {
       return (

@@ -4,7 +4,6 @@ const gameLoop = require('node-gameloop')
 const PORT = 8080;
 const app = express();
 app.use(cors());
-
 const server = app.listen(PORT, () => {
 	console.log('server is running on port 8080')
 });
@@ -12,7 +11,7 @@ const io = require('socket.io')(server);
 let socket1
 let socket2
 
-let gameState = {
+const gameState = {
 
 	ball: {
 		x: Math.floor(Math.random() * 10) + 5,
@@ -157,8 +156,8 @@ io.on('connection', (socket) => {
 		playerIndex[0].emit('update', updateLeftPlayer)
 		playerIndex[1].emit('update', updateRightPlayer)
 	
-		// 1000/fps
-	}, 1000/60)
+		//1000/fps
+	}, 1000/40)
 
 
 
