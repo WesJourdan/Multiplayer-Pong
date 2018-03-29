@@ -23,12 +23,12 @@ let gameState = {
 	},
 	paddle: {
 		left: {
-			name: '',
+			name: null,
 			x: 0.5,
 			y: 15
 		},
 		right: {
-			name: '',
+			name: null,
 			x: 0.5,
 			y: 15
 		}
@@ -51,12 +51,12 @@ resetGame = () => {
 		},
 		paddle: {
 			left: {
-				name: playerIndex[0].name || '' ,
+				name: playerIndex[0].name,
 				x: 0.5,
 				y: 15
 			},
 			right: {
-				name: playerIndex[1].name || '',
+				name: playerIndex[1].name,
 				x: 0.5,
 				y: 15
 			}
@@ -75,11 +75,12 @@ io.on('connection', (socket) => {
 
 	console.log('connected ' + socket.id)
 	
+	//When a new player joins...
 	socket.on('join', () => {
 		// If we have less than 2 players, add the player to the game.
 		if (playerIndex.length < 2) {
 			playerIndex.push(socket)
-			// Assign sides to each client.
+			// Assign sides to each player.
 			if (playerIndex.length === 1) {
 				gameState.paddle.left.name = socket.name
 				socket.emit('leftPlayer', { side: 'left' })
@@ -88,7 +89,7 @@ io.on('connection', (socket) => {
 				socket.emit('rightPlayer', { side: 'right' })
 			}
 		} else {
-		// If we already have 2 players, add the player to the queue.
+		// Otherwise, we already have 2 players, so we add the player to the queue.
 			playerQueue.push(socket)
 		}
 	});
@@ -101,14 +102,8 @@ io.on('connection', (socket) => {
 		let index = playerIndex.indexOf(socket)
 		//If the user disconnecting is currently playing...
 		if (index != -1) {
-			// reset the game
-			resetGame();
-			// Reset the remaining player's UI.
-			index === 1 ? playerIndex[0].emit('reset') : playerIndex[1].emit('reset')
-			// Reset the spectators' UI.
-			playerQueue.map(socket => {
-				socket.emit('reset')
-			})
+			// reset clients' UIs
+			socket.broadcast.emit('reset')
 		
 			//If another player is waiting, add them to the game.
 			if (playerQueue.length > 0) {
@@ -116,10 +111,15 @@ io.on('connection', (socket) => {
 				//assign them to the vacant side.
 				if (index === 0) {
 					playerIndex[index].emit('leftPlayer', { side: 'left' })
+					gameState.paddle.left.name = playerIndex[index].name
 				} else if (index === 1) {
 					playerIndex[index].emit('rightPlayer', { side: 'right' })
+					gameState.paddle.right.name = playerIndex[index].name
 				}
 			}
+			//reset the game state
+			resetGame();
+
 			//If the user disconnecting is not currently playing...
 		} else if (playerQueue.indexOf(socket) != -1) {
 			//remove them from the queue.
@@ -138,7 +138,7 @@ io.on('connection', (socket) => {
 	})
 
 	// increment ready counter. When it gets to 2 the game starts. When it hits 3 the game pauses
-	// and the counter is reset to 0. When it hits 2 again the game starts.
+	// and the counter is reset to 0. When it hits 2 the game starts again.
 	socket.on('ready', () => {
 
 		if (readySetGo > 2) {
@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
 		} else {
 			playerIndex[0].emit('play')
 			playerIndex[1].emit('play')
-			//TODO put a set timeout here for when the game is unpaused to display a countdown to the players. 
+			//TODO put a set timeout here. When the game is unpaused display a countdown to the players. 
 			isPaused = false
 		}
 	})
@@ -199,6 +199,9 @@ const loop = gameLoop.setGameLoop((delta) => {
 		gameState.ball.vx *= -1
 	}
 
+	//set new values
+	
+
 	//apply updates to their objects.
 	updateLeftPlayer.ball = gameState.ball
 	updateLeftPlayer.paddle = gameState.paddle.right
@@ -209,6 +212,8 @@ const loop = gameLoop.setGameLoop((delta) => {
 	updateRightPlayer.score = gameState.score
 	
 	//update both players.
+	// the if statement ensures that updates aren't sent when
+	// the game is paused above in the loop.
 	if (readySetGo === 2) {
 		playerIndex[0].emit('update', updateLeftPlayer)
 		playerIndex[1].emit('update', updateRightPlayer)
@@ -217,6 +222,8 @@ const loop = gameLoop.setGameLoop((delta) => {
 		playerQueue.map(socket => {
 			socket.emit('update', gameState)
 		})
+	} else {
+		resetGame()
 	}
 	//1000/fps
 }, 1000/40)

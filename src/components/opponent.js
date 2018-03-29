@@ -12,7 +12,7 @@ export default class Opponent extends Component {
 			position: 'absolute',
 			backgroundColor: 'white',
 			top: `${this.props.paddle.y}vw`,
-
+			cursor: 'none'
 		}
 
 		if (this.props.position === 'left') {

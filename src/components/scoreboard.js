@@ -10,7 +10,8 @@ export default class Scoreboard extends Component {
 			position: 'absolute',
 			top: '3vw',
 			textAlign: 'center',
-			fontSize: '4vw'
+			fontSize: '4vw',
+			cursor: 'none'
 		}
 
 		const nameStyle = {
@@ -18,7 +19,8 @@ export default class Scoreboard extends Component {
 			position: 'absolute',
 			top: '1vw',
 			textAlign: 'center',
-			fontSize: '2vw'
+			fontSize: '2vw',
+			cursor: 'none'
 		}
 
 		if (this.props.position == 'left') {

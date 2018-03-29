@@ -23,7 +23,8 @@ export default class Paddle extends Component {
 			height: '14vw',
 			position: 'absolute',
 			backgroundColor: 'white',
-			top: `${this.props.paddle.y}vw`,			
+			top: `${this.props.paddle.y}vw`,
+			cursor: 'none'	
 		}
 
 		if (this.props.position === 'left') {

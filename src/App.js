@@ -12,8 +12,8 @@ const socket = io('http://localhost:8080');
 
 class App extends Component {
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
 
     this.state = {
       ball: {
@@ -28,18 +28,18 @@ class App extends Component {
       },
       paddle: {
         left: {
-          name: '',
+          name: null,
           x: 0.5,
           y: 15
         },
         right: {
-          name: '',
+          name: null,
           x: 0.5,
           y: 15
         }
       },
       opponent: {
-        name: '',
+        name: null,
         x: 0.5,
         y: 15
       },
@@ -49,6 +49,7 @@ class App extends Component {
     }
 
     this.setState = this.setState.bind(this)
+    this.startSockets = this.startSockets.bind(this)
   }
 
   render() {
@@ -62,6 +63,7 @@ class App extends Component {
       textAlign: 'center',
       fontSize: '2vw',
       backgroundColor: 'black',
+      cursor: 'none'
     }
     const pauseStyle = {
       color: 'lightgreen',
@@ -72,7 +74,8 @@ class App extends Component {
       textAlign: 'center',
       fontSize: '2vw',
       backgroundColor: 'black',
-      opacity: '0.5'
+      opacity: '0.5',
+      cursor: 'none'
     }
 
     if (this.state.side === 'left' && !this.state.isPaused) {
@@ -103,7 +106,7 @@ class App extends Component {
           < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
           < Opponent position={'right'} paddle={this.state.opponent} />
           < Ball ball={this.state.ball} />      
-          < Pause />
+          < Pause opponent={this.state.paddle.right.name}/>
         </div>
       ); 
 
@@ -115,7 +118,7 @@ class App extends Component {
           < Opponent position={'left'} paddle={this.state.opponent} />
           < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
           < Ball ball={this.state.ball} />
-          < Pause />
+          < Pause opponent={this.state.paddle.left.name} />
         </div>
       );
 
@@ -129,7 +132,10 @@ class App extends Component {
           < Ball ball={this.state.ball} />
           < Lobby name={this.state.name} setName={this.setState} socket={socket}/>
         </div>
-      )
+      );
+    } else {
+      return <div>waiting</div>
+      
     }
   }
 
@@ -148,13 +154,12 @@ class App extends Component {
     document.removeEventListener("keydown", this.playerReady.bind(this));;
   } 
 
-
   componentDidMount () {
-    // socket.on('connect', () => {
-    //   socket.emit('join')
-    //   console.log('joining...')
-    // })
+    this.startSockets()
+  }
 
+
+  startSockets () {
     // Listen for the server to assign which side the client will control.
     socket.on('leftPlayer', (data) => {
       if (!this.state.side) {
@@ -177,10 +182,10 @@ class App extends Component {
           opponent: data.paddle,
           ball: data.ball,
           score: data.score
-        })
+        }, () => console.log(this.state.opponent))
       } else if (this.state.side === null) {
+        //spectators recieve all game state from the server.
         this.setState(data)
-        console.log(data)
       }
       // on each update from the server, send client's current position.
       if (this.state.side === 'left') {
@@ -216,17 +221,18 @@ class App extends Component {
         },
         paddle: {
           left: {
-            name: '',
+            name: null,
             x: 0.5,
             y: 15
           },
           right: {
-            name: '',
+            name: null,
             x: 0.5,
             y: 15
           }
         },
         opponent: {
+          name: null,
           x: 0.5,
           y: 15
         },

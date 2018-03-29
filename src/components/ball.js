@@ -12,7 +12,8 @@ export default class Ball extends Component {
 			top: `${this.props.ball.y}vw`,
 			left: `${this.props.ball.x}vw`,
 			overflow: 'hidden',
-			borderRadius: '50px'
+			borderRadius: '50px',
+			cursor: 'none'
 		};
 
 		return (
