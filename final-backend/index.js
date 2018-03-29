@@ -87,11 +87,22 @@ io.on('connection', (socket) => {
 			} else if (playerIndex.length === 2) {
 				gameState.paddle.right.name = socket.name
 				socket.emit('rightPlayer', { side: 'right' })
+				playerIndex[0].emit('opponent', gameState.paddle.right)
+				playerIndex[1].emit('opponent', gameState.paddle.left)
 			}
 		} else {
 		// Otherwise, we already have 2 players, so we add the player to the queue.
 			playerQueue.push(socket)
 		}
+		// update the waiting list.
+		let waitingList = [];
+		playerQueue.map( player => {
+			waitingList.push(player.name)
+		})
+		//send the waiting list to the new socket.
+		socket.emit('waitingList', waitingList)
+		//send the waiting list to everyone else.
+		socket.broadcast.emit('waitingList', waitingList)
 	});
 
 	socket.on('setName', (data) => {
@@ -104,28 +115,34 @@ io.on('connection', (socket) => {
 		if (index != -1) {
 			// reset clients' UIs
 			socket.broadcast.emit('reset')
+			isPaused = true
 		
 			//If another player is waiting, add them to the game.
 			if (playerQueue.length > 0) {
 				playerIndex[index] = playerQueue.shift()
+				resetGame()
 				//assign them to the vacant side.
 				if (index === 0) {
 					playerIndex[index].emit('leftPlayer', { side: 'left' })
 					gameState.paddle.left.name = playerIndex[index].name
+					//send both players their opponent information.
+					playerIndex[0].emit('opponent', gameState.paddle.right)
+					playerIndex[1].emit('opponent', gameState.paddle.left)
 				} else if (index === 1) {
 					playerIndex[index].emit('rightPlayer', { side: 'right' })
 					gameState.paddle.right.name = playerIndex[index].name
-				}
+					//send both players their opponent information.
+					playerIndex[0].emit('opponent', gameState.paddle.right)
+					playerIndex[1].emit('opponent', gameState.paddle.left)
+				}	
 			}
-			//reset the game state
-			resetGame();
-
 			//If the user disconnecting is not currently playing...
 		} else if (playerQueue.indexOf(socket) != -1) {
 			//remove them from the queue.
 			let index = playerQueue.indexOf(socket)
 			playerQueue.splice(index, 1)
 		}
+
 	})
 
 	// Listen for new state from both clients
@@ -199,10 +216,7 @@ const loop = gameLoop.setGameLoop((delta) => {
 		gameState.ball.vx *= -1
 	}
 
-	//set new values
-	
-
-	//apply updates to their objects.
+	//apply updates to the objects that we will send to the clients.
 	updateLeftPlayer.ball = gameState.ball
 	updateLeftPlayer.paddle = gameState.paddle.right
 	updateLeftPlayer.score = gameState.score
@@ -211,20 +225,17 @@ const loop = gameLoop.setGameLoop((delta) => {
 	updateRightPlayer.paddle = gameState.paddle.left
 	updateRightPlayer.score = gameState.score
 	
-	//update both players.
-	// the if statement ensures that updates aren't sent when
-	// the game is paused above in the loop.
-	if (readySetGo === 2) {
-		playerIndex[0].emit('update', updateLeftPlayer)
-		playerIndex[1].emit('update', updateRightPlayer)
+// update both players.
+// the if statement ensures that updates aren't sent when
+// the game is paused above in the loop.
+	playerIndex[0].emit('update', updateLeftPlayer)
+	playerIndex[1].emit('update', updateRightPlayer)
 
-		//update spectators.
-		playerQueue.map(socket => {
-			socket.emit('update', gameState)
-		})
-	} else {
-		resetGame()
-	}
+	//update spectators.
+	playerQueue.map(socket => {
+		socket.emit('update', gameState)
+	})
+	
 	//1000/fps
 }, 1000/40)
 

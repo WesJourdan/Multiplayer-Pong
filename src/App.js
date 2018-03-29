@@ -45,7 +45,8 @@ class App extends Component {
       },
       side: null,
       isPaused: true,
-      name: null
+      name: null,
+      waitingList: []
     }
 
     this.setState = this.setState.bind(this)
@@ -106,7 +107,7 @@ class App extends Component {
           < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
           < Opponent position={'right'} paddle={this.state.opponent} />
           < Ball ball={this.state.ball} />      
-          < Pause opponent={this.state.paddle.right.name}/>
+          < Pause opponent={this.state.opponent.name}/>
         </div>
       ); 
 
@@ -118,7 +119,7 @@ class App extends Component {
           < Opponent position={'left'} paddle={this.state.opponent} />
           < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
           < Ball ball={this.state.ball} />
-          < Pause opponent={this.state.paddle.left.name} />
+          < Pause opponent={this.state.opponent.name} />
         </div>
       );
 
@@ -182,7 +183,7 @@ class App extends Component {
           opponent: data.paddle,
           ball: data.ball,
           score: data.score
-        }, () => console.log(this.state.opponent))
+        })
       } else if (this.state.side === null) {
         //spectators recieve all game state from the server.
         this.setState(data)
@@ -204,6 +205,18 @@ class App extends Component {
     socket.on('play', () => {
       this.setState({
         isPaused: false
+      })
+    })
+
+    socket.on('waitingList', (data) => {
+      this.setState({
+        waitingList: data
+      })
+    })
+
+    socket.on('opponent', (data) => {
+      this.setState({
+        opponent: data
       })
     })
 
