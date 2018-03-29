@@ -27,8 +27,8 @@ export default class Scoreboard extends Component {
 			scoreStyle.left = '4vw'
 			nameStyle.left = '4vw'
 		} else {
-			scoreStyle.right = '4vw'
-			nameStyle.right = '4vw'
+			scoreStyle.right = '19vw'
+			nameStyle.right = '19vw'
 		}
 		
 		return (

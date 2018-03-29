@@ -32,7 +32,7 @@ export default class Paddle extends Component {
 			style.borderRadius = `30px 5px 5px 30px`
 			style.borderLeft = '1vw solid lightgreen'
 		} else {
-			style.right = `${this.props.paddle.x}vw`;
+			style.right = `${this.props.paddle.x + 15}vw`;
 			style.borderRadius = `5px 30px 30px 5px`
 			style.borderRight = '1vw solid lightgreen'
 		}

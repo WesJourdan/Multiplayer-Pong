@@ -6,61 +6,65 @@ body {
 }
 
 div {
-    cursor: none;
+	cursor: none;
 }
 
 input {
-    border: none;
-    cursor: none;
+	border: none;
+	cursor: none;
 }
 
 input:focus {
-    border: none;
-    outline: none;
-    cursor: none;
-    
-    
+	border: none;
+	outline: none;
+	cursor: none;
 }
 
+ul {
+	list-style-type: none; 
+}
 #root {
-    background-color: #111;
-    
+	background-color: rgb(29, 29, 29);
 }
 
 @font-face {
-    font-family: goldfish;
-    font-style: normal;
-    font-weight: 400;
-    src: url(./assets/VIDEOPHREAK.ttf)format("truetype")
+	font-family: goldfish;
+	font-style: normal;
+	font-weight: 400;
+	src: url(./assets/VIDEOPHREAK.ttf)format("truetype")
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    cursor: default;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    box-sizing: border-box
+	margin: 0;
+	padding: 0;
+	cursor: default;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	box-sizing: border-box
 }
 
 #root {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
-    position: fixed;
-    overflow: hidden;
-    height: 45vw;
-    width: 60vw;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	margin: auto;
+	position: fixed;
+	overflow: hidden;
+	height: 45vw;
+	width: 75vw;
 }
 
 
 
 html #root {
-    color: #EEE;
-    font-family: goldfish;
+	color: #EEE;
+	font-family: goldfish;
     
 }
+
+
+
+

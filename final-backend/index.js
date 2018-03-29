@@ -62,7 +62,28 @@ resetGame = () => {
 			}
 		}
 	}
+
+	playerIndex[0].emit('reset')
+	playerIndex[0].broadcast.emit('reset')
 }
+
+announceWinner = () => {
+	isPaused = true
+	console.log("announce winner")
+	if (gameState.score.left > gameState.score.right) {
+		playerIndex[0].emit('gameover', {winner: playerIndex[0].name, loser: playerIndex[1].name})
+		playerIndex[0].broadcast.emit('gameover', { winner: playerIndex[0].name, loser: playerIndex[1].name })
+		playerIndex[1].disconnect()
+		
+	} else if (gameState.score.right > gameState.score.left) {
+		playerIndex[1].emit('gameover', { winner: playerIndex[1].name, loser: playerIndex[0].name })
+		playerIndex[1].broadcast.emit('gameover', { winner: playerIndex[1].name, loser: playerIndex[0].name })
+		playerIndex[0].disconnect()
+	}
+	
+}
+
+
 
 let updateLeftPlayer = {}
 let updateRightPlayer = {}
@@ -142,6 +163,13 @@ io.on('connection', (socket) => {
 			let index = playerQueue.indexOf(socket)
 			playerQueue.splice(index, 1)
 		}
+		// update the waiting list.
+		let waitingList = [];
+		playerQueue.map(player => {
+			waitingList.push(player.name)
+		})
+		//send the updated waiting list to everyone else.
+		socket.broadcast.emit('waitingList', waitingList)
 
 	})
 
@@ -191,10 +219,18 @@ const loop = gameLoop.setGameLoop((delta) => {
 	if (gameState.ball.x > 57.25 && gameState.ball.vx > 0) {
 		gameState.ball.vx *= -1
 		gameState.score.left++
+		//check for a winner
+		if (gameState.score.left > 2) {
+			announceWinner()
+		}
 	}
 	if (gameState.ball.x <= 0 && gameState.ball.vx < 0) {
 		gameState.ball.vx *= -1
 		gameState.score.right++
+		//check for a winner
+		if (gameState.score.right > 2) {
+			announceWinner()
+		}
 	}
 	if (gameState.ball.y > 42.25 && gameState.ball.vy > 0) {
 		gameState.ball.vy *= -1
@@ -224,10 +260,10 @@ const loop = gameLoop.setGameLoop((delta) => {
 	updateRightPlayer.ball = gameState.ball
 	updateRightPlayer.paddle = gameState.paddle.left
 	updateRightPlayer.score = gameState.score
+
 	
 // update both players.
-// the if statement ensures that updates aren't sent when
-// the game is paused above in the loop.
+ 
 	playerIndex[0].emit('update', updateLeftPlayer)
 	playerIndex[1].emit('update', updateRightPlayer)
 

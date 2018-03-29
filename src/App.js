@@ -5,9 +5,10 @@ import Ball from './components/ball'
 import Scoreboard from './components/scoreboard'
 import Pause from './components/pause'
 import Lobby from './components/lobby'
+import WaitingList from './components/waitingList'
+import Gameover from './components/gameover'
 import io from 'socket.io-client';
-const socket = io('http://localhost:8080');
-// const socket = io('http://wes1.localhost.run')
+var socket = io(`http://localhost:8080`);
 
 
 class App extends Component {
@@ -46,18 +47,22 @@ class App extends Component {
       side: null,
       isPaused: true,
       name: null,
-      waitingList: []
+      waitingList: [],
+      winner: null,
+      loser: null
     }
 
     this.setState = this.setState.bind(this)
     this.startSockets = this.startSockets.bind(this)
+    this.resetGame = this.resetGame.bind(this)
+    this.gameOver = this.gameOver.bind(this)
   }
 
   render() {
 
     const style = {
       color: 'lightgreen',
-      position: 'absolute',
+      display: 'flex',
       width: '100%',
       height: '100%',
       margin: 'auto',
@@ -66,9 +71,18 @@ class App extends Component {
       backgroundColor: 'black',
       cursor: 'none'
     }
+
+    const gameContainerStyle = {
+      color: 'lightgreen',
+      width: '80%',
+      height: '100%',
+      textAlign: 'center',
+      fontSize: '2vw',
+      backgroundColor: 'black',
+      cursor: 'none'
+    }
     const pauseStyle = {
       color: 'lightgreen',
-      position: 'absolute',
       width: '100%',
       height: '100%',
       margin: 'auto',
@@ -79,64 +93,85 @@ class App extends Component {
       cursor: 'none'
     }
 
+
+    if (this.state.winner !== null) {
+      return (
+        <Gameover winner={this.state.winner} loser={this.state.loser} />
+      )
+    }
+
     if (this.state.side === 'left' && !this.state.isPaused) {
       return (
         <div style={style}>
-          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.name}/>
-          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.opponent.name} />
-          < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
-          < Opponent position={'right'} paddle={this.state.opponent} />
-          < Ball ball={this.state.ball} />      
+          <div style={gameContainerStyle}>
+            < Scoreboard position={'left'} score={this.state.score.left} name={this.state.name}/>
+            < Scoreboard position={'right'} score={this.state.score.right} name={this.state.opponent.name} />
+            < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
+            < Opponent position={'right'} paddle={this.state.opponent} />
+            < Ball ball={this.state.ball} /> 
+          </div> 
+          <WaitingList list={this.state.waitingList} />
         </div>
       ); 
     } else if (this.state.side === 'right' && !this.state.isPaused) {
       return (
         <div style={style}>
-          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.opponent.name}/>
-          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.name}/>
-          < Opponent position={'left'} paddle={this.state.opponent} />
-          < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
-          < Ball ball={this.state.ball} />
+          <div style={gameContainerStyle}>
+            < Scoreboard position={'left'} score={this.state.score.left} name={this.state.opponent.name}/>
+            < Scoreboard position={'right'} score={this.state.score.right} name={this.state.name}/>
+            < Opponent position={'left'} paddle={this.state.opponent} />
+            < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
+            < Ball ball={this.state.ball} />
+          </div>
+          <WaitingList list={this.state.waitingList}/>
         </div>
       ); 
     } else if (this.state.side === 'left' && this.state.isPaused) {
       return (
         <div style={pauseStyle}>
-          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.name} />
-          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.opponent.name}/>
-          < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
-          < Opponent position={'right'} paddle={this.state.opponent} />
-          < Ball ball={this.state.ball} />      
-          < Pause opponent={this.state.opponent.name}/>
+          <div style={gameContainerStyle}>
+            < Scoreboard position={'left'} score={this.state.score.left} name={this.state.name} />
+            < Scoreboard position={'right'} score={this.state.score.right} name={this.state.opponent.name}/>
+            < Paddle position={'left'} paddle={this.state.paddle.left} isPaused={this.state.isPaused} />
+            < Opponent position={'right'} paddle={this.state.opponent} />
+            < Ball ball={this.state.ball} />      
+            < Pause opponent={this.state.opponent.name}/>
+          </div>
+          <WaitingList list={this.state.waitingList}/>
         </div>
       ); 
 
     } else if (this.state.side === 'right' && this.state.isPaused) {
       return (
         <div style={pauseStyle}>
-          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.opponent.name} />
-          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.name} />
-          < Opponent position={'left'} paddle={this.state.opponent} />
-          < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
-          < Ball ball={this.state.ball} />
-          < Pause opponent={this.state.opponent.name} />
+          <div style={gameContainerStyle}>
+            < Scoreboard position={'left'} score={this.state.score.left} name={this.state.opponent.name} />
+            < Scoreboard position={'right'} score={this.state.score.right} name={this.state.name} />
+            < Opponent position={'left'} paddle={this.state.opponent} />
+            < Paddle position={'right'} paddle={this.state.paddle.right} isPaused={this.state.isPaused} />
+            < Ball ball={this.state.ball} />
+            < Pause opponent={this.state.opponent.name} />
+          </div>
+          <WaitingList list={this.state.waitingList}/>
         </div>
       );
 
     } else if (this.state.side === null) {
       return (
         <div style={style}>
-          < Scoreboard position={'left'} score={this.state.score.left} name={this.state.paddle.left.name}/>
-          < Scoreboard position={'right'} score={this.state.score.right} name={this.state.paddle.right.name} />
-          < Opponent position={'left'} paddle={this.state.paddle.left} />
-          < Opponent position={'right'} paddle={this.state.paddle.right} />
-          < Ball ball={this.state.ball} />
-          < Lobby name={this.state.name} setName={this.setState} socket={socket}/>
+          <div style={gameContainerStyle}>
+            < Scoreboard position={'left'} score={this.state.score.left} name={this.state.paddle.left.name}/>
+            < Scoreboard position={'right'} score={this.state.score.right} name={this.state.paddle.right.name} />
+            < Opponent position={'left'} paddle={this.state.paddle.left} />
+            < Opponent position={'right'} paddle={this.state.paddle.right} />
+            < Ball ball={this.state.ball} />
+            < Lobby name={this.state.name} setName={this.setState} socket={socket}/>
+          </div>
+          <WaitingList list={this.state.waitingList}/>
         </div>
       );
     } else {
       return <div>waiting</div>
-      
     }
   }
 
@@ -156,7 +191,51 @@ class App extends Component {
   } 
 
   componentDidMount () {
+    // socket = io(`http://${window.location.hostname}:8080`)
     this.startSockets()
+  }
+
+  gameOver (data) {
+    this.setState({
+      winner: data.winner,
+      loser: data.loser
+    })
+    setTimeout(this.resetGame, 1500)
+  }
+
+  resetGame () {
+    this.setState({
+      ball: {
+        x: -10,
+        y: -10,
+        vx: 0,
+        vy: 0
+      },
+      score: {
+        left: 0,
+        right: 0
+      },
+      paddle: {
+        left: {
+          name: null,
+          x: 0.5,
+          y: 15
+        },
+        right: {
+          name: null,
+          x: 0.5,
+          y: 15
+        }
+      },
+      opponent: {
+        name: null,
+        x: 0.5,
+        y: 15
+      },
+      isPaused: true,
+      winner: null,
+      loser: null
+    })
   }
 
 
@@ -220,37 +299,12 @@ class App extends Component {
       })
     })
 
+    socket.on('gameover', (data) => {
+      this.gameOver(data)
+    })
+
     socket.on('reset', () => {
-      this.setState({
-        ball: {
-          x: -10,
-          y: -10,
-          vx: 0,
-          vy: 0
-        },
-        score: {
-          left: 0,
-          right: 0
-        },
-        paddle: {
-          left: {
-            name: null,
-            x: 0.5,
-            y: 15
-          },
-          right: {
-            name: null,
-            x: 0.5,
-            y: 15
-          }
-        },
-        opponent: {
-          name: null,
-          x: 0.5,
-          y: 15
-        },
-        isPaused: true
-      })
+      
     })
   }
 }

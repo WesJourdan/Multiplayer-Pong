@@ -19,7 +19,7 @@ export default class Opponent extends Component {
 			style.left = `${this.props.paddle.x}vw`;
 			style.borderRadius = `30px 5px 5px 30px`
 		} else {
-			style.right = `${this.props.paddle.x}vw`;
+			style.right = `${this.props.paddle.x + 15}vw`;
 			style.borderRadius = `5px 30px 30px 5px`
 		}
 		return (
