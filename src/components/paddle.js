@@ -38,9 +38,7 @@ export default class Paddle extends Component {
 		}
 
 		return (
-		
 			<div style={style}>
-				
 			</div>
 		);
 	};

@@ -8,7 +8,7 @@ import Lobby from './components/lobby'
 import WaitingList from './components/waitingList'
 import Gameover from './components/gameover'
 import io from 'socket.io-client';
-var socket = io(`http://localhost:8080`);
+ var socket = io(`http://localhost:8080`);
 
 
 class App extends Component {
@@ -191,7 +191,6 @@ class App extends Component {
   } 
 
   componentDidMount () {
-    // socket = io(`http://${window.location.hostname}:8080`)
     this.startSockets()
   }
 
@@ -304,7 +303,7 @@ class App extends Component {
     })
 
     socket.on('reset', () => {
-      
+      this.resetGame()
     })
   }
 }

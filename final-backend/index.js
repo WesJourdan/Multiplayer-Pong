@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const gameLoop = require('node-gameloop')
+const actions = require('./socket-actions')
 const PORT = 8080;
 const app = express();
 app.use(cors());
@@ -9,6 +10,44 @@ const server = app.listen(PORT, () => {
 });
 const io = require('socket.io')(server);
 
+
+
+
+// SOCKET EVENTS //
+io.on('connection', (socket) => {
+
+	console.log('connected ' + socket.id)
+	
+	socket.on('join', () => {
+		actions.handleNewConnect(socket, activePlayers, gameState, playerQueue)
+	});
+
+	socket.on('setName', (data) => {
+		actions.setName(socket, data)
+	})
+
+	socket.on('disconnecting', () => {
+		actions.handleDisconnect(socket, activePlayers, gameState, playerQueue)
+	})
+
+	// Listen for new state from both clients
+	socket.on('left', (data) => {
+		actions.handleLeftInput(socket, data, gameState)
+	})
+
+	socket.on('right', (data) => {
+		actions.handleRightInput(socket, data, gameState)
+	})
+
+	socket.on('ready', () => {
+		actions.handlePause(gameState, activePlayers)
+	})
+
+});
+
+
+
+// GAME STATE AND VARIABLES //
 let gameState = {
 
 	ball: {
@@ -32,11 +71,19 @@ let gameState = {
 			x: 0.5,
 			y: 15
 		}
-	}
+	},
+	isPaused: true,
+	readySetGo: 0
 }
 
+let updateLeftPlayer = {}
+let updateRightPlayer = {}
+let activePlayers = []
+let playerQueue = []
+
+
+// GAME METHODS //
 resetGame = () => {
-	readySetGo = 0
 	gameState = {
 
 		ball: {
@@ -51,166 +98,49 @@ resetGame = () => {
 		},
 		paddle: {
 			left: {
-				name: playerIndex[0].name,
+				name: activePlayers[0].name,
 				x: 0.5,
 				y: 15
 			},
 			right: {
-				name: playerIndex[1].name,
+				name: activePlayers[1].name,
 				x: 0.5,
 				y: 15
 			}
-		}
+		},
+		isPaused: true,
+		readySetGo: 0
 	}
+	updateLeftPlayer = {}
+	updateRightPlayer = {}
 
-	playerIndex[0].emit('reset')
-	playerIndex[0].broadcast.emit('reset')
+	activePlayers[0].emit('reset')
+	activePlayers[0].broadcast.emit('reset')
 }
 
 announceWinner = () => {
-	isPaused = true
+	gameState.isPaused = true
 	console.log("announce winner")
 	if (gameState.score.left > gameState.score.right) {
-		playerIndex[0].emit('gameover', {winner: playerIndex[0].name, loser: playerIndex[1].name})
-		playerIndex[0].broadcast.emit('gameover', { winner: playerIndex[0].name, loser: playerIndex[1].name })
-		playerIndex[1].disconnect()
-		
+		activePlayers[0].emit('gameover', { winner: activePlayers[0].name, loser: activePlayers[1].name })
+		activePlayers[0].broadcast.emit('gameover', { winner: activePlayers[0].name, loser: activePlayers[1].name })
+		activePlayers[1].disconnect()
+
 	} else if (gameState.score.right > gameState.score.left) {
-		playerIndex[1].emit('gameover', { winner: playerIndex[1].name, loser: playerIndex[0].name })
-		playerIndex[1].broadcast.emit('gameover', { winner: playerIndex[1].name, loser: playerIndex[0].name })
-		playerIndex[0].disconnect()
+		activePlayers[1].emit('gameover', { winner: activePlayers[1].name, loser: activePlayers[0].name })
+		activePlayers[1].broadcast.emit('gameover', { winner: activePlayers[1].name, loser: activePlayers[0].name })
+		activePlayers[0].disconnect()
 	}
-	
+
 }
 
-
-
-let updateLeftPlayer = {}
-let updateRightPlayer = {}
-let playerIndex = []
-let playerQueue = []
-let readySetGo = 0
-let isPaused = true
-
-io.on('connection', (socket) => {
-
-	console.log('connected ' + socket.id)
-	
-	//When a new player joins...
-	socket.on('join', () => {
-		// If we have less than 2 players, add the player to the game.
-		if (playerIndex.length < 2) {
-			playerIndex.push(socket)
-			// Assign sides to each player.
-			if (playerIndex.length === 1) {
-				gameState.paddle.left.name = socket.name
-				socket.emit('leftPlayer', { side: 'left' })
-			} else if (playerIndex.length === 2) {
-				gameState.paddle.right.name = socket.name
-				socket.emit('rightPlayer', { side: 'right' })
-				playerIndex[0].emit('opponent', gameState.paddle.right)
-				playerIndex[1].emit('opponent', gameState.paddle.left)
-			}
-		} else {
-		// Otherwise, we already have 2 players, so we add the player to the queue.
-			playerQueue.push(socket)
-		}
-		// update the waiting list.
-		let waitingList = [];
-		playerQueue.map( player => {
-			waitingList.push(player.name)
-		})
-		//send the waiting list to the new socket.
-		socket.emit('waitingList', waitingList)
-		//send the waiting list to everyone else.
-		socket.broadcast.emit('waitingList', waitingList)
-	});
-
-	socket.on('setName', (data) => {
-		socket.name = data
-	})
-
-	socket.on('disconnecting', () => {
-		let index = playerIndex.indexOf(socket)
-		//If the user disconnecting is currently playing...
-		if (index != -1) {
-			// reset clients' UIs
-			socket.broadcast.emit('reset')
-			isPaused = true
-		
-			//If another player is waiting, add them to the game.
-			if (playerQueue.length > 0) {
-				playerIndex[index] = playerQueue.shift()
-				resetGame()
-				//assign them to the vacant side.
-				if (index === 0) {
-					playerIndex[index].emit('leftPlayer', { side: 'left' })
-					gameState.paddle.left.name = playerIndex[index].name
-					//send both players their opponent information.
-					playerIndex[0].emit('opponent', gameState.paddle.right)
-					playerIndex[1].emit('opponent', gameState.paddle.left)
-				} else if (index === 1) {
-					playerIndex[index].emit('rightPlayer', { side: 'right' })
-					gameState.paddle.right.name = playerIndex[index].name
-					//send both players their opponent information.
-					playerIndex[0].emit('opponent', gameState.paddle.right)
-					playerIndex[1].emit('opponent', gameState.paddle.left)
-				}	
-			}
-			//If the user disconnecting is not currently playing...
-		} else if (playerQueue.indexOf(socket) != -1) {
-			//remove them from the queue.
-			let index = playerQueue.indexOf(socket)
-			playerQueue.splice(index, 1)
-		}
-		// update the waiting list.
-		let waitingList = [];
-		playerQueue.map(player => {
-			waitingList.push(player.name)
-		})
-		//send the updated waiting list to everyone else.
-		socket.broadcast.emit('waitingList', waitingList)
-
-	})
-
-	// Listen for new state from both clients
-	socket.on('left', (data) => {
-		gameState.paddle.left.y = data
-	})
-
-	socket.on('right', (data) => {
-		gameState.paddle.right.y = data
-	})
-
-	// increment ready counter. When it gets to 2 the game starts. When it hits 3 the game pauses
-	// and the counter is reset to 0. When it hits 2 the game starts again.
-	socket.on('ready', () => {
-
-		if (readySetGo > 2) {
-			readySetGo = 0
-		}
-		++readySetGo
-
-		if (readySetGo !== 2) {
-			playerIndex[0].emit('pause')
-			playerIndex[1].emit('pause')
-			isPaused = true
-		} else {
-			playerIndex[0].emit('play')
-			playerIndex[1].emit('play')
-			//TODO put a set timeout here. When the game is unpaused display a countdown to the players. 
-			isPaused = false
-		}
-	})
-});
-
-	
-// Game loop houses all game logic.
+// GAME LOOP
+// houses all game logic.
 const loop = gameLoop.setGameLoop((delta) => {
 
-	if (isPaused) {
+	if (gameState.isPaused) {
 		return
-	}	
+	}
 	// ball velocity
 	gameState.ball.x += gameState.ball.vx * delta
 	gameState.ball.y += gameState.ball.vy * delta
@@ -261,19 +191,21 @@ const loop = gameLoop.setGameLoop((delta) => {
 	updateRightPlayer.paddle = gameState.paddle.left
 	updateRightPlayer.score = gameState.score
 
-	
-// update both players.
- 
-	playerIndex[0].emit('update', updateLeftPlayer)
-	playerIndex[1].emit('update', updateRightPlayer)
+
+	// update both players.
+
+	activePlayers[0].emit('update', updateLeftPlayer)
+	activePlayers[1].emit('update', updateRightPlayer)
 
 	//update spectators.
 	playerQueue.map(socket => {
 		socket.emit('update', gameState)
 	})
-	
+
 	//1000/fps
-}, 1000/40)
+}, 1000 / 40)
+	
+
 
 
 
